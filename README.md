@@ -7,7 +7,7 @@
 
 ## Live
 
-- **Приложение:** `<укажите ваш Vercel-URL>`
+- **Приложение:** https://coin-game-navy.vercel.app/
 - **Casino:** [`0x7f1D029Eb0512bC9258D05EDD64CAc6b923E52f3`](https://sepolia.etherscan.io/address/0x7f1D029Eb0512bC9258D05EDD64CAc6b923E52f3) (верифицирован)
 - **ChipToken (CHIP):** [`0xb6b1e56213993b84b25BD40F2cEc378eaE742A69`](https://sepolia.etherscan.io/address/0xb6b1e56213993b84b25BD40F2cEc378eaE742A69) (верифицирован)
 - **Сеть:** Ethereum Sepolia (chainId 11155111)
