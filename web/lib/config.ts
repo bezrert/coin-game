@@ -9,9 +9,9 @@ export const CHAIN = sepolia;
  */
 export const CONTRACTS = {
   chip: (process.env.NEXT_PUBLIC_CHIP_ADDRESS ??
-    "0x98B660cDB79Ea457678c15E98EB380622B30097a") as `0x${string}`,
+    "0xb6b1e56213993b84b25BD40F2cEc378eaE742A69") as `0x${string}`,
   casino: (process.env.NEXT_PUBLIC_CASINO_ADDRESS ??
-    "0xfB94F0865B87d8dC0ACbaC17D63fc725379e4De8") as `0x${string}`,
+    "0x7f1D029Eb0512bC9258D05EDD64CAc6b923E52f3") as `0x${string}`,
 };
 
 export const EXPLORER_URL = "https://sepolia.etherscan.io";

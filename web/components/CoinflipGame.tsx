@@ -105,7 +105,8 @@ export function CoinflipGame() {
         <div>
           <h2 className="font-semibold">Ждём Chainlink VRF…</h2>
           <p className="mt-1 max-w-sm text-sm text-foreground/60">
-            Результат придёт второй транзакцией от Chainlink (обычно 30–60с).
+            Результат придёт второй транзакцией от Chainlink (обычно до 1–2 минут).
+            Можно обновить страницу или закрыть вкладку — ставка не потеряется.
             {game.isSlow
               ? " Иногда дольше — ждём подтверждения, страница не зависла."
               : ""}

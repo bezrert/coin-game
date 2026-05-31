@@ -17,6 +17,15 @@
   --font-mono: var(--font-geist-mono);
 }
 
+html {
+  font-size: 16px;
+}
+@media (min-width: 1024px) {
+  html {
+    font-size: 17.5px;
+  }
+}
+
 body {
   background:
     radial-gradient(1200px 600px at 50% -10%, rgba(34, 211, 238, 0.12), transparent 60%),
