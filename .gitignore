@@ -1,0 +1,14 @@
+# секреты / локальный env (корневые)
+/.env
+/.env.*
+
+# python venv (остатки тулинга)
+/.venv/
+
+# IDE / OS
+/.idea/
+.DS_Store
+
+# агентский тулинг — не часть сдачи
+/.agents/
+/skills-lock.json
