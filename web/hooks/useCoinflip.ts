@@ -5,8 +5,9 @@ import {
   useAccount,
   useWriteContract,
   useWaitForTransactionReceipt,
-  useWatchContractEvent,
+  usePublicClient,
 } from "wagmi";
+import { useQuery } from "@tanstack/react-query";
 import { parseEventLogs } from "viem";
 import { casino } from "@/lib/contracts";
 import { casinoAbi } from "@/lib/abi";
@@ -123,30 +124,44 @@ export function useCoinflip(onSettled?: () => void) {
     }
   }, [placed, betTxHash, address, waitStart]);
 
-  // второй tx от Chainlink: BetSettled по нашему requestId (индексирован → фильтр).
-  // poll + fromBlock = блок ставки закрывают гонку «событие раньше подписки».
-  useWatchContractEvent({
-    ...casino,
-    eventName: "BetSettled",
-    args: requestId !== null ? { requestId } : undefined,
-    enabled: requestId !== null && result === null,
-    poll: true,
-    fromBlock,
-    onLogs(logs) {
-      const log = logs[0];
-      if (!log) return;
-      setResult({
-        requestId: log.args.requestId!,
-        randomWord: log.args.randomWord!,
-        outcome: Number(log.args.outcome),
-        win: Boolean(log.args.win),
-        payout: log.args.payout!,
-        settleTxHash: log.transactionHash,
+  // второй tx от Chainlink: BetSettled по нашему requestId. Тянем его обычным
+  // getLogs-поллингом, а НЕ через useWatchContractEvent: тот в poll-режиме использует
+  // stateful eth_*Filter, который на пуловых/публичных RPC теряет фильтр между опросами
+  // («Missing or invalid parameters») и не доставляет событие — отсюда «висит на ожидании,
+  // хотя on-chain зарезолвлено». getLogs без состояния и стабилен (4/4 на публичном RPC).
+  // fromBlock = блок ставки закрывает гонку «событие раньше подписки».
+  const publicClient = usePublicClient();
+  const { data: settledLog } = useQuery({
+    queryKey: ["betSettled", requestId?.toString() ?? null],
+    enabled: requestId !== null && result === null && Boolean(publicClient),
+    refetchInterval: 4000,
+    queryFn: async () => {
+      const logs = await publicClient!.getContractEvents({
+        ...casino,
+        eventName: "BetSettled",
+        args: { requestId: requestId! },
+        fromBlock,
+        toBlock: "latest",
       });
-      clearPending(); // ставка разрешилась — снапшот больше не нужен
-      onSettled?.();
+      return logs[0] ?? null;
     },
   });
+
+  // Доставка результата из найденного лога в состояние (один раз).
+  useEffect(() => {
+    if (!settledLog || result !== null) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setResult({
+      requestId: settledLog.args.requestId!,
+      randomWord: settledLog.args.randomWord!,
+      outcome: Number(settledLog.args.outcome),
+      win: Boolean(settledLog.args.win),
+      payout: settledLog.args.payout!,
+      settleTxHash: settledLog.transactionHash,
+    });
+    clearPending(); // ставка разрешилась — снапшот больше не нужен
+    onSettled?.();
+  }, [settledLog, result, onSettled]);
 
   const placeBet = useCallback(
     (choice: 0 | 1, amount: bigint) => {
