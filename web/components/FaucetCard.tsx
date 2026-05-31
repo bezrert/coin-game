@@ -4,14 +4,13 @@ import { useAccount, useReadContract } from "wagmi";
 import { chip } from "@/lib/contracts";
 import { formatChip, formatDuration } from "@/lib/format";
 import { useWriteTx } from "@/hooks/useWriteTx";
-import { usePlayerLedger } from "@/hooks/usePlayerLedger";
+import { useCasinoSync } from "@/hooks/useCasinoSync";
 import { useNow } from "@/hooks/useNow";
 import { TxStatus } from "./TxStatus";
 
 /** Кран CHIP: выдаёт фиксированную сумму с кулдауном на адрес. */
 export function FaucetCard() {
   const { address, isConnected } = useAccount();
-  const ledger = usePlayerLedger();
   const now = useNow();
 
   const lastClaimRead = useReadContract({
@@ -23,11 +22,8 @@ export function FaucetCard() {
   const { data: cooldown } = useReadContract({ ...chip, functionName: "FAUCET_COOLDOWN" });
   const { data: amount } = useReadContract({ ...chip, functionName: "FAUCET_AMOUNT" });
 
-  // после выдачи обновляем баланс кошелька (ledger) и время последней выдачи
-  const tx = useWriteTx(() => {
-    void ledger.refetch();
-    void lastClaimRead.refetch();
-  });
+  // после выдачи единый шов инвалидирует все чтения — баланс кошелька и lastClaim
+  const tx = useWriteTx(useCasinoSync());
 
   if (!isConnected) return null;
 

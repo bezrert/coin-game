@@ -82,11 +82,14 @@ export function useCoinflip(onSettled?: () => void) {
   const [restored, setRestored] = useState<PendingBet | null>(null);
   const now = useNow();
 
-  // Восстановление при маунте: только если ставка той же учётки и ещё не resolved.
+  // Восстановление при маунте: гидрация из localStorage (внешнего стора) для той же
+  // учётки. Это легитимный mount-time-эффект чтения внешнего состояния; правило
+  // react-hooks/set-state-in-effect здесь ложно-срабатывает — отключаем точечно.
   useEffect(() => {
     if (!address || result !== null) return;
     const pending = readPending();
     if (pending && pending.address.toLowerCase() === address.toLowerCase()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setRestored(pending);
       setWaitStart(pending.placedAt);
     }

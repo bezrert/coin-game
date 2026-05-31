@@ -4,11 +4,14 @@ import { useState } from "react";
 import { useAccount } from "wagmi";
 import { parseChip, formatChip, shortError } from "@/lib/format";
 import { quotePayout, payoutMultiplier } from "@/lib/payout";
+import { betDisabledReason } from "@/lib/betValidity";
 import { explorerTx } from "@/lib/config";
 import { usePlayerLedger } from "@/hooks/usePlayerLedger";
 import { useCasinoParams } from "@/hooks/useCasinoParams";
+import { useCasinoSync } from "@/hooks/useCasinoSync";
 import { useCoinflip } from "@/hooks/useCoinflip";
 import { AmountInput } from "./AmountInput";
+import { CoinToss } from "./CoinToss";
 
 const SIDES = [
   { value: 0 as const, label: "Орёл", face: "О" },
@@ -23,10 +26,8 @@ export function CoinflipGame() {
 
   const ledger = usePlayerLedger();
   const params = useCasinoParams();
-  const game = useCoinflip(() => {
-    void ledger.refetch();
-    void params.refetch();
-  });
+  const sync = useCasinoSync();
+  const game = useCoinflip(sync);
 
   if (!isConnected) return null;
 
@@ -36,25 +37,19 @@ export function CoinflipGame() {
   const quote =
     parsed !== null && payoutBps !== undefined ? quotePayout(parsed, payoutBps) : null;
   const potentialWin = quote?.potentialWin ?? null;
-  const housePayout = quote?.housePayout ?? null;
   const multiplier =
     payoutBps !== undefined ? payoutMultiplier(payoutBps).toFixed(2) : "—";
 
-  // Пре-валидация для UX; контракт всё равно проверит те же условия (§12.C).
-  let disabledReason: string | null = null;
-  if (parsed === null) disabledReason = "Введите сумму";
-  else if (minBet !== undefined && parsed < minBet)
-    disabledReason = `Минимум ${formatChip(minBet)} CHIP`;
-  else if (maxBet !== undefined && parsed > maxBet)
-    disabledReason = `Максимум ${formatChip(maxBet)} CHIP`;
-  else if (ledger.casinoChip !== undefined && parsed > ledger.casinoChip)
-    disabledReason = "Не хватает CHIP в казино — внесите депозит";
-  else if (
-    housePayout !== null &&
-    houseBalance !== undefined &&
-    housePayout > houseBalance
-  )
-    disabledReason = "Банкролл казино мал для такой ставки";
+  // Пре-валидация для UX; правила — в betValidity (зеркало placeBet), контракт
+  // остаётся авторитетом (§12.C).
+  const disabledReason = betDisabledReason({
+    amount: parsed,
+    minBet,
+    maxBet,
+    casinoChip: ledger.casinoChip,
+    houseBalance,
+    payoutBps,
+  });
 
   const busy = game.phase === "placing" || game.phase === "waiting";
 
@@ -99,9 +94,7 @@ export function CoinflipGame() {
   if (game.phase === "waiting") {
     return (
       <section className="casino-card flex flex-col items-center gap-4 p-6 text-center">
-        <div className="coin coin-spin" aria-hidden>
-          ?
-        </div>
+        <CoinToss />
         <div>
           <h2 className="font-semibold">Ждём Chainlink VRF…</h2>
           <p className="mt-1 max-w-sm text-sm text-foreground/60">

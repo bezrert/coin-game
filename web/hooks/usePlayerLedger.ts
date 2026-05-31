@@ -5,9 +5,9 @@ import { chip, casino } from "@/lib/contracts";
 
 /**
  * Финансовое состояние игрока on-chain в одном модуле: CHIP в кошельке,
- * CHIP внутри казино и allowance на казино. Прячет address/abi/args/enabled-guard;
- * `refetch` обновляет всё разом (общие react-query записи — обновляются и у других
- * наблюдателей того же ключа). Переиспользуется балансами, депозитом и игрой (этап 4).
+ * CHIP внутри казино и allowance на казино. Прячет address/abi/args/enabled-guard.
+ * Переиспользуется балансами, депозитом и игрой (этап 4). Обновление после tx —
+ * через общий шов useCasinoSync (инвалидация по queryKey), не ручной refetch.
  */
 export function usePlayerLedger() {
   const { address } = useAccount();
@@ -32,14 +32,9 @@ export function usePlayerLedger() {
     query: { enabled },
   });
 
-  const refetch = async () => {
-    await Promise.all([wallet.refetch(), inCasino.refetch(), allowance.refetch()]);
-  };
-
   return {
     walletChip: wallet.data,
     casinoChip: inCasino.data,
     allowance: allowance.data,
-    refetch,
   };
 }

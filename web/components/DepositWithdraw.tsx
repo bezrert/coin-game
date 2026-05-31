@@ -7,6 +7,7 @@ import { chip, casino } from "@/lib/contracts";
 import { parseChip } from "@/lib/format";
 import { useWriteTx } from "@/hooks/useWriteTx";
 import { usePlayerLedger } from "@/hooks/usePlayerLedger";
+import { useCasinoSync } from "@/hooks/useCasinoSync";
 import { TxStatus } from "./TxStatus";
 import { AmountInput } from "./AmountInput";
 
@@ -15,7 +16,8 @@ export function DepositWithdraw() {
   const { isConnected } = useAccount();
   const [amount, setAmount] = useState("");
   const ledger = usePlayerLedger();
-  const tx = useWriteTx(() => void ledger.refetch());
+  const sync = useCasinoSync();
+  const tx = useWriteTx(sync);
 
   if (!isConnected) return null;
 
